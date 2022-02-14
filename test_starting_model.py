@@ -10,6 +10,11 @@ from keras.preprocessing.image import load_img, img_to_array
 # Create a Redidual-network already trained in the IMAGENET
 ResNet50_model = ResNet50(weights='imagenet')
 
+chosen_breeds = ['Labrador_retriever', 'Boston_bull', 'German_shepherd', 'golden_retriever', 'French_bulldog',
+                 'standard_poodle', 'beagle', 'Rottweiler', 'German_short-haired_pointer', 'Scotch_terrier', 'boxer',
+                 'Siberian_husky', 'Blenheim_spaniel', 'Doberman', 'miniature_schnauzer', 'Shih-Tzu', 'Pomeranian',
+                 'Maltese_dog', 'pug', 'Sussex_spaniel']
+
 id_to_label_file = open("imagenet1000_clsidx_to_labels.txt", mode="r")
 id_to_label = {}
 for line in id_to_label_file:
@@ -17,19 +22,14 @@ for line in id_to_label_file:
     id_to_label.update({int(line[0].strip()): line[1].strip()})
 id_to_label_file.close()
 
-breeds_file = open("breeds.txt", mode="r")
-dataset_breeds = []
-for breed in breeds_file:
-    dataset_breeds.append(breed.strip())
-breeds_file.close()
-
 # Load the image in the size expected by the ResNet50_model
-test_data_file = open("test.csv", mode="r")
-test_imgs = []
-for line in test_data_file:
-    test_imgs.append(line.strip().split(","))
-test_imgs = test_imgs[1:]
-test_data_file.close()
+with open("test.csv", mode="r") as test_data_file:
+    test_imgs = []
+    for line in test_data_file:
+        img, breed = line.strip().split(",")
+        if breed in chosen_breeds:
+            test_imgs.append([img, breed])
+    test_imgs = test_imgs[1:]
 
 correct_predictions = 0
 false_predictions = 0
@@ -58,9 +58,5 @@ for image_data in test_imgs:
         correct_predictions += 1
     else:
         false_predictions += 1
-    print(label, id_to_label[position_of_max])
 print("correctly classified: ", correct_predictions/len(test_imgs))
 print("wrongly classified: ", false_predictions/len(test_imgs))
-
-
-

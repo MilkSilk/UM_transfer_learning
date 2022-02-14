@@ -15,25 +15,30 @@ from keras.preprocessing.image import load_img, img_to_array
 # Create a Redidual-network already trained in the IMAGENET
 ResNet50_model = ResNet50(weights='imagenet', include_top=True)
 
-train_data_file = open("train.csv", mode="r")
-train_imgs = []
-for line in train_data_file:
-    train_imgs.append(line.strip().split(","))
-train_imgs = train_imgs[1:]
-train_data_file.close()
+chosen_breeds = ['Labrador_retriever', 'Boston_bull', 'German_shepherd', 'golden_retriever', 'French_bulldog',
+                 'standard_poodle', 'beagle', 'Rottweiler', 'German_short-haired_pointer', 'Scotch_terrier', 'boxer',
+                 'Siberian_husky', 'Blenheim_spaniel', 'Doberman', 'miniature_schnauzer', 'Shih-Tzu', 'Pomeranian',
+                 'Maltese_dog', 'pug', 'Sussex_spaniel']
 
-test_data_file = open("test.csv", mode="r")
-test_imgs = []
-for line in test_data_file:
-    test_imgs.append(line.strip().split(","))
-test_imgs = test_imgs[1:]
-test_data_file.close()
+with open("train.csv", mode="r") as train_data_file:
+    train_imgs = []
+    for line in train_data_file:
+        img, breed = line.strip().split(",")
+        if breed in chosen_breeds:
+            train_imgs.append([img, breed])
+    train_imgs = train_imgs[1:]
+
+with open("test.csv", mode="r") as test_data_file:
+    test_imgs = []
+    for line in test_data_file:
+        img, breed = line.strip().split(",")
+        if breed in chosen_breeds:
+            test_imgs.append([img, breed])
+    test_imgs = test_imgs[1:]
 
 class_probs_train = []
 labels_train = []
 
-# num_of_train_cases = 2000
-train_count = 0
 for image_data in train_imgs:
     img, label = image_data
     label = label.replace("_", " ")
@@ -47,20 +52,8 @@ for image_data in train_imgs:
     probs = ResNet50_model.predict(img_ready)
     class_probs_train.append(probs[0])
     labels_train.append(label)
-    train_count += 1
-    if train_count % 500 == 0:
-        print("Przetworzono", train_count, "obrazkow do zbioru treningowego")
 
-image_probs_file = open("X_train.txt", mode="w")
-for x in [str(x.tolist()) for x in class_probs_train]:
-    image_probs_file.write(x+"\n")
-
-labels_file = open("y_train.txt", mode="w")
-for x in labels_train:
-    labels_file.write(x+"\n")
-
-
-knn_model = KNeighborsClassifier(n_jobs=-1, n_neighbors=3)
+knn_model = KNeighborsClassifier(n_jobs=-1, n_neighbors=7)
 tree_model = DecisionTreeClassifier()
 forest_model = RandomForestClassifier()
 svm_model = SVC()
@@ -72,9 +65,7 @@ for model in models:
 
 class_probs_test = []
 labels_test = []
-num_of_test_cases = 100
 
-test_count = 0
 for image_data in test_imgs:
     img, label = image_data
     label = label.replace("_", " ")
@@ -91,17 +82,6 @@ for image_data in test_imgs:
 
     class_probs_test.append(probs[0])
     labels_test.append(label)
-    test_count += 1
-    if test_count % 200 == 0:
-        print("Przetworzono", test_count, "obrazkow do zbioru testowego")
-
-image_probs_file_test = open("X_test.txt", mode="w")
-for x in [str(x.tolist()) for x in class_probs_test]:
-    image_probs_file_test.write(x+"\n")
-
-labels_file_test = open("y_test.txt", mode="w")
-for x in labels_test:
-    labels_file_test.write(x+"\n")
 
 for model in models:
     acc = model.score(class_probs_test, labels_test)
